@@ -123,13 +123,6 @@ namespace YourModNamespace
             Messages.Message("All faction losses cleared.", MessageTypeDefOf.TaskCompletion);
         }
 
-        [DebugAction("CancelRaids", "Reset faction losses", allowedGameStates = AllowedGameStates.Playing)]
-        public static void ResetLosses()
-        {
-            var wl = WorldLosses.Current;
-            if (wl == null) return;
-            wl.losses.Clear();
-            Messages.Message("Faction losses cleared.", MessageTypeDefOf.TaskCompletion);
-        }        
+        // Removed duplicate reset action under CancelRaids to avoid confusion.
     }
 }
