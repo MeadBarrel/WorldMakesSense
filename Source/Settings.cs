@@ -9,12 +9,14 @@ namespace WorldMakesSense
         // Back-compat for code referencing raidPointsMultiplier
         public int distanceClose = 5;
         public int distanceFar = 50;
+        public bool debugLogging = false;
 
         public override void ExposeData()
         {
             Scribe_Values.Look(ref raidRollMultiplier, "raidRollMultiplier", 1f);
             Scribe_Values.Look(ref distanceClose, "distanceClose", 5);
             Scribe_Values.Look(ref distanceFar, "distanceFar", 50);
+            Scribe_Values.Look(ref debugLogging, "debugLogging", false);
         }
     }
 
@@ -61,6 +63,10 @@ namespace WorldMakesSense
             Widgets.IntRange(rangeRect, 172936215, ref range, 0, 1000);
             Settings.distanceClose = range.min;
             Settings.distanceFar = range.max;
+
+            // Verbose logging toggle
+            list.Gap(6f);
+            Widgets.CheckboxLabeled(list.GetRect(24f), "Verbose debug logging", ref Settings.debugLogging);
 
             list.End();
         }

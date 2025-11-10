@@ -1,25 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-
-using UnityEngine;
-using Verse;
-using Verse.AI;
-using Verse.AI.Group;
-using Verse.Sound;
-using Verse.Noise;
-using Verse.Grammar;
 using RimWorld;
 using RimWorld.Planet;
-using RimWorld.Planet;
+using Verse;
 
 namespace WorldMakesSense
 {
-    public class Helpers
+    public static class Helpers
     {
-        public static float? GetFactionDistanceToTile(Faction faction, PlanetTile tile)
+        public static float? GetFactionDistanceToTile(Faction faction, int tile)
         {
             var settlements = Find.WorldObjects.Settlements
                 .Where(s => s.Faction == faction)

@@ -75,7 +75,10 @@ namespace WorldMakesSense
             if (amount > 0f)
             {
                 WorldLosses.Current.AddLoss(faction, amount);
-                Log.Message($"Added {amount:0} losses to faction");
+                if (WorldMakesSenseMod.Settings?.debugLogging == true)
+                {
+                    Log.Message($"[WorldMakesSense] Added {amount:0} losses to faction {faction?.Name ?? "<null>"}");
+                }
             }
         }
     }
@@ -116,10 +119,16 @@ namespace WorldMakesSense
 
             if (roll < probability)
             {
-                Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbability:0.000}, distance={distanceProbability:0.000}), roll={roll:0.000}; Raid will happen.");
+                if (WorldMakesSenseMod.Settings?.debugLogging == true)
+                {
+                    Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbability:0.000}, distance={distanceProbability:0.000}), roll={roll:0.000}; Raid will happen.");
+                }
                 return true;
             }
-            Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbability:0.000}, distance={distanceProbability:0.000}), roll={roll:0.000}; Raid cancelled.");
+            if (WorldMakesSenseMod.Settings?.debugLogging == true)
+            {
+                Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbability:0.000}, distance={distanceProbability:0.000}), roll={roll:0.000}; Raid cancelled.");
+            }
             __result = true;
             return false;
         }
