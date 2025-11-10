@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -119,23 +119,14 @@ namespace WorldMakesSense
 
             if (roll < probability)
             {
-                if (WorldMakesSenseMod.Settings?.debugLogging == true)
-                {
-                    var lossProbDbg = Helpers.CalculateLossProbability(points, losses);
-                    var distProbDbg = Helpers.GetDistanceProbability(distanceToFaction.Value);
-                    Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbDbg:0.000}, distance={distProbDbg:0.000}), roll={roll:0.000}; Raid will happen.");
-                }
+                Helpers.CalculateRaidProbability(points, losses, distanceToFaction.Value, roll, true);
                 return true;
             }
-            if (WorldMakesSenseMod.Settings?.debugLogging == true)
-            {
-                var lossProbDbg = Helpers.CalculateLossProbability(points, losses);
-                var distProbDbg = Helpers.GetDistanceProbability(distanceToFaction.Value);
-                Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbDbg:0.000}, distance={distProbDbg:0.000}), roll={roll:0.000}; Raid cancelled.");
-            }
+            Helpers.CalculateRaidProbability(points, losses, distanceToFaction.Value, roll, false);
             __result = true;
             return false;
         }
     }
 
 }
+
