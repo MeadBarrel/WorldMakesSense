@@ -12,6 +12,7 @@ namespace WorldMakesSense
         // Debug: capture the last loaded raw lists from save
         public List<Faction> tmpFactions;
         public List<float> tmpFloats;
+        private int nextDeteriorationTick = -1;
 
         public WorldLosses(World world) : base(world) { }
 
@@ -22,6 +23,7 @@ namespace WorldMakesSense
             if (losses == null) losses = new Dictionary<Faction, float>();
 
             Scribe_Collections.Look(ref losses, "losses", LookMode.Reference, LookMode.Value, ref tmpFactions, ref tmpFloats);
+            Scribe_Values.Look(ref nextDeteriorationTick, "nextDeteriorationTick", -1);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
@@ -43,6 +45,62 @@ namespace WorldMakesSense
                 tmpFloats = null;
             }
 
+        }
+
+        public override void WorldComponentTick()
+        {
+            base.WorldComponentTick();
+            int now = Find.TickManager.TicksGame;
+            int interval = GetDeteriorationIntervalTicks();
+            if (interval <= 0) return;
+
+            if (nextDeteriorationTick < 0)
+            {
+                nextDeteriorationTick = now + interval;
+                return;
+            }
+
+            if (now >= nextDeteriorationTick)
+            {
+                DeteriorateOnce();
+                // Schedule next
+                nextDeteriorationTick = now + interval;
+            }
+        }
+
+        private int GetDeteriorationIntervalTicks()
+        {
+            var s = WorldMakesSenseMod.Settings;
+            float days = s != null ? Math.Max(0f, s.lossDeteriorationDays) : 1f;
+            return (int)Math.Max(60f, days * 60000f);
+        }
+
+        public void DeteriorateOnce()
+        {
+            var s = WorldMakesSenseMod.Settings;
+            float percent = s != null ? Math.Max(0f, s.lossDeteriorationPercent) : 10f;
+            float fraction = Math.Min(1f, percent / 100f);
+
+            if (losses == null || losses.Count == 0) return;
+            var keys = new List<Faction>(losses.Keys);
+            foreach (var f in keys)
+            {
+                if (f == null || f.IsPlayer) { losses.Remove(f); continue; }
+                float v = losses[f];
+                float nv = v * (1f - fraction);
+                if (nv <= 0.01f)
+                {
+                    losses.Remove(f);
+                }
+                else
+                {
+                    losses[f] = nv;
+                }
+            }
+            if (WorldMakesSenseMod.Settings?.debugLogging == true)
+            {
+                Log.Message($"[WorldMakesSense] Deteriorated faction losses by {percent:0.#}%");
+            }
         }
 
         public void AddLoss(Faction f, float amount)

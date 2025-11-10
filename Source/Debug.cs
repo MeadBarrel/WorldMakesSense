@@ -124,5 +124,19 @@ namespace YourModNamespace
         }
 
         // Removed duplicate reset action under CancelRaids to avoid confusion.
+
+        [DebugAction("WorldMakesSens", "Deteriorate losses now", allowedGameStates = AllowedGameStates.Playing)]
+        public static void DeteriorateLossesNow()
+        {
+            var wl = WorldLosses.Current;
+            if (wl == null)
+            {
+                Log.Warning("[WorldMakesSense] WorldLosses not available");
+                return;
+            }
+            wl.DeteriorateOnce();
+            var pct = WorldMakesSenseMod.Settings?.lossDeteriorationPercent ?? 10f;
+            Messages.Message($"Deteriorated losses by {pct:0.#}%.", MessageTypeDefOf.TaskCompletion);
+        }
     }
 }
