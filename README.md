@@ -26,3 +26,8 @@ This RimWorld mod is set up for development with [Visual Studio Code](https://co
 * For XML only modders remove preLaunchTask line from `.vscode/launch.json` file.
 * Modify `.vscode/mod.csproj` and `About/About.xml` according to your needs.
  
+## Settings
+- Raid points multiplier: Options -> Mod Settings -> `WorldMakesSense`.
+  - Multiplies raid `parms.points` before probability is computed.
+  - Range 0.10x–5.00x; default 1.00x.
+ 
