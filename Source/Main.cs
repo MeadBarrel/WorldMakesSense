@@ -72,12 +72,14 @@ namespace WorldMakesSense
             if (faction == null || faction.IsPlayer) return;
 
             float amount = WorldLosses.GetDeathLoss(pawn);
+            var lm = WorldMakesSenseMod.Settings != null ? Mathf.Max(0f, WorldMakesSenseMod.Settings.lossMultiplier) : 1f;
+            amount *= lm;
             if (amount > 0f)
             {
                 WorldLosses.Current.AddLoss(faction, amount);
                 if (WorldMakesSenseMod.Settings?.debugLogging == true)
                 {
-                    Log.Message($"[WorldMakesSense] Added {amount:0} losses to faction {faction?.Name ?? "<null>"}");
+                    Log.Message($"[WorldMakesSense] Added {amount:0} losses (x{lm:0.00}) to faction {faction?.Name ?? "<null>"}");
                 }
             }
         }

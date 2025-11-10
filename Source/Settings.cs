@@ -10,6 +10,7 @@ namespace WorldMakesSense
         public int distanceClose = 5;
         public int distanceFar = 50;
         public bool debugLogging = false;
+        public float lossMultiplier = 1f;
 
         public override void ExposeData()
         {
@@ -17,6 +18,7 @@ namespace WorldMakesSense
             Scribe_Values.Look(ref distanceClose, "distanceClose", 5);
             Scribe_Values.Look(ref distanceFar, "distanceFar", 50);
             Scribe_Values.Look(ref debugLogging, "debugLogging", false);
+            Scribe_Values.Look(ref lossMultiplier, "lossMultiplier", 1f);
         }
     }
 
@@ -51,6 +53,22 @@ namespace WorldMakesSense
                 label: label,
                 leftAlignedLabel: "0.1x",
                 rightAlignedLabel: "5x",
+                roundTo: 0.01f
+            );
+
+            // Loss multiplier slider
+            list.Gap(6f);
+            var lossLabel = $"Loss multiplier: {Settings.lossMultiplier:0.00}x";
+            var lossRect = list.GetRect(24f);
+            Settings.lossMultiplier = Widgets.HorizontalSlider(
+                lossRect,
+                Settings.lossMultiplier,
+                0.10f,
+                10.0f,
+                middleAlignment: false,
+                label: lossLabel,
+                leftAlignedLabel: "0.1x",
+                rightAlignedLabel: "10x",
                 roundTo: 0.01f
             );
 
