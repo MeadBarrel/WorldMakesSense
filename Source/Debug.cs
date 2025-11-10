@@ -77,6 +77,52 @@ namespace YourModNamespace
             Find.WindowStack.Add(new Dialog_DebugOptionListLister(factionOptions));
         }
 
+        [DebugAction("WorldMakesSens", "Reset losses (faction)", allowedGameStates = AllowedGameStates.Playing)]
+        public static void ResetLossesForFaction()
+        {
+            var wl = WorldLosses.Current;
+            if (wl == null)
+            {
+                Log.Warning("[WorldMakesSense] WorldLosses not available");
+                return;
+            }
+
+            var options = new List<DebugMenuOption>();
+            foreach (var f in Find.FactionManager.AllFactionsListForReading)
+            {
+                if (f == null || f.IsPlayer) continue;
+                var label = f.Name ?? f.GetUniqueLoadID();
+                options.Add(new DebugMenuOption(label, DebugMenuOptionMode.Action, delegate
+                {
+                    if (wl.losses.Remove(f))
+                    {
+                        Messages.Message($"Reset losses for {f.Name}", MessageTypeDefOf.TaskCompletion);
+                    }
+                    else
+                    {
+                        Messages.Message($"No recorded losses for {f.Name}", MessageTypeDefOf.RejectInput);
+                    }
+                }));
+            }
+
+            if (options.Count == 0)
+            {
+                Messages.Message("No NPC factions available.", MessageTypeDefOf.RejectInput);
+                return;
+            }
+
+            Find.WindowStack.Add(new Dialog_DebugOptionListLister(options));
+        }
+
+        [DebugAction("WorldMakesSens", "Reset losses (all)", allowedGameStates = AllowedGameStates.Playing)]
+        public static void ResetAllLossesAction()
+        {
+            var wl = WorldLosses.Current;
+            if (wl == null) return;
+            wl.losses.Clear();
+            Messages.Message("All faction losses cleared.", MessageTypeDefOf.TaskCompletion);
+        }
+
         [DebugAction("CancelRaids", "Reset faction losses", allowedGameStates = AllowedGameStates.Playing)]
         public static void ResetLosses()
         {
