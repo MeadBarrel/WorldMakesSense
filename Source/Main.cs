@@ -82,12 +82,24 @@ namespace WorldMakesSense
     {
         public static bool Prefix(IncidentParms parms, ref bool __result)
         {
-            if (parms == null || parms.points < 50f) return true;
-
+            if (parms == null) return true;
             if (parms.quest != null) return true;
-            // if (parms.forced) return true;
+            if (parms.points == 0) return true;
 
-            Log.Message($"Raid cancelled. Pints={parms.points:0}");
+            var faction = parms.faction;
+            var losses = WorldLosses.Current.GetLosses(faction);
+
+            var probability = (parms.points - losses) / parms.points;
+            if (probability < 0) probability = 0;
+
+            var roll = Rand.Value;
+
+            if (roll < probability)
+            {
+                Log.Message($"[WorldMakesSense] points={parms.points:0}; p={probability:0}, roll={roll:0}; Raid will happen.");
+                return true;
+            }
+            Log.Message($"[WorldMakesSense] points={parms.points:0}; p={probability:0}, roll={roll:0}; Raid cancelled;");
             __result = true;
             return false;
         }

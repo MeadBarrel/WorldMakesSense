@@ -10,8 +10,8 @@ namespace WorldMakesSense
     {
         public Dictionary<Faction, float> losses = new Dictionary<Faction, float>();
         // Debug: capture the last loaded raw lists from save
-        public List<Faction> debugLastKeys;
-        public List<float> debugLastValues;
+        public List<Faction> tmpFactions;
+        public List<float> tmpFloats;
 
         public WorldLosses(World world) : base(world) { }
 
@@ -21,54 +21,28 @@ namespace WorldMakesSense
 
             if (losses == null) losses = new Dictionary<Faction, float>();
 
-            if (Scribe.mode == LoadSaveMode.Saving)
-            {
-                debugLastKeys = new List<Faction>(losses.Count);
-                debugLastValues = new List<float>(losses.Count);
-                foreach (var kv in losses)
-                {
-                    if (kv.Key != null && !kv.Key.IsPlayer)
-                    {
-                        debugLastKeys.Add(kv.Key);
-                        debugLastValues.Add(kv.Value);
-                    }
-                }
-            }
-
-            Scribe_Collections.Look(ref debugLastKeys, "losses_keys", LookMode.Reference);
-            Scribe_Collections.Look(ref debugLastValues, "losses_values", LookMode.Value);
+            Scribe_Collections.Look(ref losses, "losses", LookMode.Reference, LookMode.Value, ref tmpFactions, ref tmpFloats);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                int kc = debugLastKeys?.Count ?? 0;
-                int vc = debugLastValues?.Count ?? 0;
-                Log.Message($"[WorldMakesSense] PostLoadInit: losses_keys={kc}, losses_values={vc}");
-                for (int i = 0; i < kc; i++)
+                var toRemove = new List<Faction>();
+                var existingFactions = Find.FactionManager.AllFactionsListForReading;
+
+                foreach (var kv in losses)
                 {
-                    var f = debugLastKeys[i];
-                    float val = (debugLastValues != null && i < vc) ? debugLastValues[i] : float.NaN;
-                    string fid = f != null ? f.GetUniqueLoadID() : "null";
-                    string fname = f?.Name ?? "null";
-                    Log.Message($"[WorldMakesSense] losses[{i}]: factionId={fid}, name={fname}, value={val}");
+                    var f = kv.Key;
+                    var v = kv.Value;
+                    if (f == null) { toRemove.Add(f); continue; }
+                    if (f.IsPlayer) { toRemove.Add(f); continue; }
+                    if (!existingFactions.Contains(f)) { toRemove.Add(f); continue; }
                 }
 
-                losses = new Dictionary<Faction, float>();
+                foreach (var f in toRemove) losses.Remove(f);
 
-                if (debugLastKeys != null && debugLastValues != null)
-                {
-                    int count = Math.Min(debugLastKeys.Count, debugLastValues.Count);
-                    for (int i = 0; i < count; i++)
-                    {
-                        var f = debugLastKeys[i];
-                        if (f != null && !f.IsPlayer)
-                        {
-                            losses[f] = debugLastValues[i];
-                        }
-                    }
-                }
-
-                Log.Message($"[WorldMakesSense] PostLoadInit: rebuilt losses count={losses.Count}");
+                tmpFactions = null;
+                tmpFloats = null;
             }
+
         }
 
         public void AddLoss(Faction f, float amount)

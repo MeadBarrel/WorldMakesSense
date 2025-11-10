@@ -1,7 +1,8 @@
 /.vscode/obj
 /*.sln 
 
-# /*/Assemblies
-# /*/Assemblies/*.pdb
+# Ignore built assemblies
+/*/Assemblies/*.dll
+/*/Assemblies/*.pdb
 # /.vscode
 # /Source

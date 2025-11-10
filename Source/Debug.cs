@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 using System.Text;
 using LudeonTK;
 using RimWorld;
@@ -35,7 +36,47 @@ namespace YourModNamespace
                 title: "Faction losses"
             ));
         }
-        
+
+        [DebugAction("WorldMakesSens", "Add losses", allowedGameStates = AllowedGameStates.Playing)]
+        public static void AddLosses()
+        {
+            var wl = WorldLosses.Current;
+            if (wl == null)
+            {
+                Log.Warning("[WorldMakesSense] WorldLosses not available");
+                return;
+            }
+
+            var factionOptions = new List<DebugMenuOption>();
+            foreach (var f in Find.FactionManager.AllFactionsListForReading)
+            {
+                if (f == null || f.IsPlayer) continue;
+                var label = f.Name ?? f.GetUniqueLoadID();
+                factionOptions.Add(new DebugMenuOption(label, DebugMenuOptionMode.Action, delegate
+                {
+                    var amountOptions = new List<DebugMenuOption>();
+                    int[] amounts = new[] { 10, 50, 100, 200, 500, 1000 };
+                    foreach (var amt in amounts)
+                    {
+                        amountOptions.Add(new DebugMenuOption($"+{amt}", DebugMenuOptionMode.Action, delegate
+                        {
+                            wl.AddLoss(f, amt);
+                            Messages.Message($"Added {amt} losses to {f.Name}", MessageTypeDefOf.TaskCompletion);
+                        }));
+                    }
+                    Find.WindowStack.Add(new Dialog_DebugOptionListLister(amountOptions));
+                }));
+            }
+
+            if (factionOptions.Count == 0)
+            {
+                Messages.Message("No NPC factions available.", MessageTypeDefOf.RejectInput);
+                return;
+            }
+
+            Find.WindowStack.Add(new Dialog_DebugOptionListLister(factionOptions));
+        }
+
         [DebugAction("CancelRaids", "Reset faction losses", allowedGameStates = AllowedGameStates.Playing)]
         public static void ResetLosses()
         {
