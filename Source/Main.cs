@@ -61,7 +61,7 @@ namespace WorldMakesSense
             return true;
         }
     }
-
+    
     [HarmonyPatch(typeof(Pawn_HealthTracker), "SetDead")]
     public static class Patch_SetDead_IncrementFactionLosses
     {
@@ -80,38 +80,46 @@ namespace WorldMakesSense
         }
     }
 
-    [HarmonyPatch(typeof(IncidentWorker_RaidEnemy), "TryExecuteWorker")]
+    [HarmonyPatch(typeof(IncidentWorker_Raid), "TryExecuteWorker")]
     public static class Patch_Raid_TryExecuteWorker_Block
     {
         public static bool Prefix(IncidentParms parms, ref bool __result)
         {
             if (parms == null) return true;
             if (parms.quest != null) return true;
-            if (parms.points == 0) return true;
+
+            var points = parms.points;
+            var target = parms.target;
+
+            if (points == 0) return true;
 
             var faction = parms.faction;
             var losses = WorldLosses.Current.GetLosses(faction);
 
-            // Apply settings multiplier to points before probability calculation
+            var lossProbability = (points - losses) / points;
+            if (lossProbability < 0) lossProbability = 0;
+
+            var distanceToFaction = Helpers.GetFactionDistanceToTile(faction, target.Tile);
+            if (distanceToFaction == null) return true;
+            if (distanceToFaction <= 0) return true;
+            var distanceProbability = Helpers.GetDistanceProbability(distanceToFaction.Value);
+
             float multiplier = 1f;
             if (WorldMakesSenseMod.Settings != null)
             {
-                multiplier = Mathf.Max(0f, WorldMakesSenseMod.Settings.raidPointsMultiplier);
+                multiplier = Mathf.Max(0f, WorldMakesSenseMod.Settings.raidRollMultiplier);
             }
-            float adjustedPoints = parms.points * multiplier;
-            if (adjustedPoints <= 0f) return true; // avoid division by zero; let raid proceed
 
-            var probability = (adjustedPoints - losses) / adjustedPoints;
-            if (probability < 0) probability = 0;
+            var roll = Rand.Value * multiplier;
 
-            var roll = Rand.Value;
+            var probability = Math.Sqrt(lossProbability*distanceProbability);
 
             if (roll < probability)
             {
-                Log.Message($"[WorldMakesSense] points={parms.points} (x{multiplier:0.00} => {adjustedPoints:0}); p={probability:0.000}, roll={roll:0.000}; Raid will happen.");
+                Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbability:0.000}, distance={distanceProbability:0.000}), roll={roll:0.000}; Raid will happen.");
                 return true;
             }
-            Log.Message($"[WorldMakesSense] points={parms.points} (x{multiplier:0.00} => {adjustedPoints:0}); p={probability:0.000}, roll={roll:0.000}; Raid cancelled;");
+            Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbability:0.000}, distance={distanceProbability:0.000}), roll={roll:0.000}; Raid cancelled.");
             __result = true;
             return false;
         }
