@@ -1,3 +1,4 @@
+using Unity.Properties;
 using UnityEngine;
 using Verse;
 
@@ -13,6 +14,8 @@ namespace WorldMakesSense
         public float lossMultiplier = 1f;
         public float lossDeteriorationPercent = 10f;
         public float lossDeteriorationDays = 1f;
+        // Per-enemy raid probability factor. Negative reduces, positive increases.
+        public float probabilityPerRelation = 0.10f;
 
         public override void ExposeData()
         {
@@ -23,6 +26,7 @@ namespace WorldMakesSense
             Scribe_Values.Look(ref lossMultiplier, "lossMultiplier", 1f);
             Scribe_Values.Look(ref lossDeteriorationPercent, "lossDeteriorationPercent", 10f);
             Scribe_Values.Look(ref lossDeteriorationDays, "lossDeteriorationDays", 1f);
+            Scribe_Values.Look(ref probabilityPerRelation, "probabilityPerRelation", 0.10f);
         }
     }
 
@@ -73,6 +77,22 @@ namespace WorldMakesSense
                 label: lossLabel,
                 leftAlignedLabel: "0.1x",
                 rightAlignedLabel: "10x",
+                roundTo: 0.01f
+            );
+
+            // Raid probability per enemy faction (can be negative)
+            list.Gap(6f);
+            var enemyFacLabel = $"Probability increase per relation: {Settings.probabilityPerRelation:+0.00;-0.00;0.00}x";
+            var enemyFacRect = list.GetRect(24f);
+            Settings.probabilityPerRelation= Widgets.HorizontalSlider(
+                enemyFacRect,
+                Settings.probabilityPerRelation,
+                -0.50f,
+                0.50f,
+                middleAlignment: false,
+                label: enemyFacLabel,
+                leftAlignedLabel: "-0.5x",
+                rightAlignedLabel: "+0.5x",
                 roundTo: 0.01f
             );
 

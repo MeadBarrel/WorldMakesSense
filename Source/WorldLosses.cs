@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Mono.Security.X509.Extensions;
 using RimWorld;
 using RimWorld.Planet;
 using Verse;
@@ -50,6 +51,11 @@ namespace WorldMakesSense
         public override void WorldComponentTick()
         {
             base.WorldComponentTick();
+            TickDeteriorateLosses();
+        }
+        
+        private void TickDeteriorateLosses()
+        {
             int now = Find.TickManager.TicksGame;
             int interval = GetDeteriorationIntervalTicks();
             if (interval <= 0) return;
@@ -67,7 +73,7 @@ namespace WorldMakesSense
                 nextDeteriorationTick = now + interval;
             }
         }
-
+        
         private int GetDeteriorationIntervalTicks()
         {
             var s = WorldMakesSenseMod.Settings;

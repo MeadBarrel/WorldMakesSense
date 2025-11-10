@@ -48,7 +48,6 @@ namespace WorldMakesSense
             Harmony harmony = new Harmony("username.worldmakessense");
             harmony.PatchAll( Assembly.GetExecutingAssembly() );
             // Ensure WorldLosses component exists so deterioration starts ticking
-            var _ = WorldLosses.Current;
         }
     }
 
@@ -92,41 +91,43 @@ namespace WorldMakesSense
     {
         public static bool Prefix(IncidentParms parms, ref bool __result)
         {
-            if (parms == null) return true;
-            if (parms.quest != null) return true;
-
-            var points = parms.points;
-            var target = parms.target;
-
-            if (points == 0) return true;
-
-            var faction = parms.faction;
-            var losses = WorldLosses.Current.GetLosses(faction);
-
-            var distanceToFaction = Helpers.GetFactionDistanceToTile(faction, target.Tile);
-            if (distanceToFaction == null) return true;
-            if (distanceToFaction <= 0) return true;
-
-            float multiplier = 1f;
-            if (WorldMakesSenseMod.Settings != null)
-            {
-                multiplier = Mathf.Max(0f, WorldMakesSenseMod.Settings.raidRollMultiplier);
-            }
-
-            var roll = Rand.Value * multiplier;
-
-            var probability = Helpers.CalculateRaidProbability(points, losses, distanceToFaction.Value);
-
-            if (roll < probability)
-            {
-                Helpers.CalculateRaidProbability(points, losses, distanceToFaction.Value, roll, true);
-                return true;
-            }
-            Helpers.CalculateRaidProbability(points, losses, distanceToFaction.Value, roll, false);
+            if (Helpers.RollIncidentProbability(parms, 1, 0, 0)) return true;
             __result = true;
             return false;
         }
     }
 
+    [HarmonyPatch(typeof(IncidentWorker_TraderCaravanArrival), "TryExecuteWorker")]
+    public static class Patch_TraderCaravanArrival_Block
+    {
+        public static bool Prefix(IncidentParms parms, ref bool __result)
+        {
+            if (Helpers.RollIncidentProbability(parms, 0, 1, 1)) return true;
+            __result = true;
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(IncidentWorker_Ambush), "TryExecuteWorker")]
+    public static class Patch_Ambush_Block
+    {
+        public static bool Prefix(IncidentParms parms, ref bool __result)
+        {
+            if (Helpers.RollIncidentProbability(parms, 1, 0, 0)) return true;
+            __result = true;
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(IncidentWorker_CaravanMeeting), "TryExecuteWorker")]
+    public static class Patch_CaravanMeeting_Block
+    {
+        public static bool Prefix(IncidentParms parms, ref bool __result)
+        {
+            if (Helpers.RollIncidentProbability(parms, 0, 1, 1)) return true;
+            __result = true;
+            return false;
+        }
+    }
 }
 
