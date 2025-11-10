@@ -39,7 +39,7 @@ namespace WorldMakesSense
                 sliderRect,
                 Settings.raidPointsMultiplier,
                 0.10f,
-                10.0f,
+                100.0f,
                 middleAlignment: false,
                 label: label,
                 leftAlignedLabel: "0.1x",

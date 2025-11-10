@@ -52,6 +52,28 @@ namespace WorldMakesSense
             losses[f] = n + amount;
         }
 
+        public static float GetDeathLoss(Pawn pawn)
+        {
+            if (pawn == null) return 0f;
+            var f = pawn.Faction;
+            if (f == null || f.IsPlayer) return 0f;
+
+            // Sum of pawn skill levels (0-20 each). Pawns without skills contribute 0.
+            var tracker = pawn.skills;
+            if (tracker == null || tracker.skills == null) return 0f;
+
+            int sum = 0;
+            for (int i = 0; i < tracker.skills.Count; i++)
+            {
+                var sr = tracker.skills[i];
+                if (sr != null)
+                {
+                    sum += sr.Level;
+                }
+            }
+            return sum;
+        }
+
         public float GetLosses(Faction f)
         {
             if (f == null) return 0;

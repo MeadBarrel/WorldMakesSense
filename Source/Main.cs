@@ -71,9 +71,12 @@ namespace WorldMakesSense
             var faction = ___pawn?.Faction;
             if (faction == null || faction.IsPlayer) return;
 
-            float amount = 10.0f;
-            WorldLosses.Current.AddLoss(faction, amount);
-            Log.Message($"Added {amount:0} losses to faction");
+            float amount = WorldLosses.GetDeathLoss(pawn);
+            if (amount > 0f)
+            {
+                WorldLosses.Current.AddLoss(faction, amount);
+                Log.Message($"Added {amount:0} losses to faction");
+            }
         }
     }
 
