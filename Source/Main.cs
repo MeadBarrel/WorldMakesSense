@@ -89,17 +89,26 @@ namespace WorldMakesSense
             var faction = parms.faction;
             var losses = WorldLosses.Current.GetLosses(faction);
 
-            var probability = (parms.points - losses) / parms.points;
+            // Apply settings multiplier to points before probability calculation
+            float multiplier = 1f;
+            if (WorldMakesSenseMod.Settings != null)
+            {
+                multiplier = Mathf.Max(0f, WorldMakesSenseMod.Settings.raidPointsMultiplier);
+            }
+            float adjustedPoints = parms.points * multiplier;
+            if (adjustedPoints <= 0f) return true; // avoid division by zero; let raid proceed
+
+            var probability = (adjustedPoints - losses) / adjustedPoints;
             if (probability < 0) probability = 0;
 
             var roll = Rand.Value;
 
             if (roll < probability)
             {
-                Log.Message($"[WorldMakesSense] points={parms.points:0}; p={probability:0}, roll={roll:0}; Raid will happen.");
+                Log.Message($"[WorldMakesSense] points={parms.points} (x{multiplier:0.00} => {adjustedPoints:0}); p={probability:0.000}, roll={roll:0.000}; Raid will happen.");
                 return true;
             }
-            Log.Message($"[WorldMakesSense] points={parms.points:0}; p={probability:0}, roll={roll:0}; Raid cancelled;");
+            Log.Message($"[WorldMakesSense] points={parms.points} (x{multiplier:0.00} => {adjustedPoints:0}); p={probability:0.000}, roll={roll:0.000}; Raid cancelled;");
             __result = true;
             return false;
         }
