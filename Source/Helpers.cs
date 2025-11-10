@@ -18,7 +18,7 @@ namespace WorldMakesSense
             var grid = Find.WorldGrid;
             return settlements.Min(s => grid.ApproxDistanceInTiles(s.Tile, tile));
         }
-        
+
         public static float GetDistanceProbability(float distance)
         {
             var settings = WorldMakesSenseMod.Settings;
@@ -30,6 +30,25 @@ namespace WorldMakesSense
             var result = Math.Pow(0.5, (distance - distanceClose)/divider);
             if (result > 1.0f) result = 1.0f;
             return (float)result;
+        }
+
+        public static float CalculateLossProbability(float points, float losses)
+        {
+            if (points <= 0f) return 1f;
+            var p = (points - losses) / points;
+            if (p < 0f) p = 0f;
+            if (p > 1f) p = 1f;
+            return p;
+        }
+
+        public static float CalculateRaidProbability(float points, float losses, float distance)
+        {
+            var lossProb = CalculateLossProbability(points, losses);
+            var distProb = GetDistanceProbability(distance);
+            var combined = Math.Sqrt(lossProb * distProb);
+            if (combined < 0f) combined = 0f;
+            if (combined > 1f) combined = 1f;
+            return (float)combined;
         }
     }
 }

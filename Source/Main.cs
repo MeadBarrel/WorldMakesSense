@@ -99,13 +99,9 @@ namespace WorldMakesSense
             var faction = parms.faction;
             var losses = WorldLosses.Current.GetLosses(faction);
 
-            var lossProbability = (points - losses) / points;
-            if (lossProbability < 0) lossProbability = 0;
-
             var distanceToFaction = Helpers.GetFactionDistanceToTile(faction, target.Tile);
             if (distanceToFaction == null) return true;
             if (distanceToFaction <= 0) return true;
-            var distanceProbability = Helpers.GetDistanceProbability(distanceToFaction.Value);
 
             float multiplier = 1f;
             if (WorldMakesSenseMod.Settings != null)
@@ -115,19 +111,23 @@ namespace WorldMakesSense
 
             var roll = Rand.Value * multiplier;
 
-            var probability = Math.Sqrt(lossProbability*distanceProbability);
+            var probability = Helpers.CalculateRaidProbability(points, losses, distanceToFaction.Value);
 
             if (roll < probability)
             {
                 if (WorldMakesSenseMod.Settings?.debugLogging == true)
                 {
-                    Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbability:0.000}, distance={distanceProbability:0.000}), roll={roll:0.000}; Raid will happen.");
+                    var lossProbDbg = Helpers.CalculateLossProbability(points, losses);
+                    var distProbDbg = Helpers.GetDistanceProbability(distanceToFaction.Value);
+                    Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbDbg:0.000}, distance={distProbDbg:0.000}), roll={roll:0.000}; Raid will happen.");
                 }
                 return true;
             }
             if (WorldMakesSenseMod.Settings?.debugLogging == true)
             {
-                Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbability:0.000}, distance={distanceProbability:0.000}), roll={roll:0.000}; Raid cancelled.");
+                var lossProbDbg = Helpers.CalculateLossProbability(points, losses);
+                var distProbDbg = Helpers.GetDistanceProbability(distanceToFaction.Value);
+                Log.Message($"[WorldMakesSense] points={parms.points}; p={probability:0.000} (losses={lossProbDbg:0.000}, distance={distProbDbg:0.000}), roll={roll:0.000}; Raid cancelled.");
             }
             __result = true;
             return false;
