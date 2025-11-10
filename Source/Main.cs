@@ -47,6 +47,8 @@ namespace WorldMakesSense
             Log.Message("WorldMakesSense loaded successfully!");
             Harmony harmony = new Harmony("username.worldmakessense");
             harmony.PatchAll( Assembly.GetExecutingAssembly() );
+            // Ensure WorldLosses component exists so deterioration starts ticking
+            var _ = WorldLosses.Current;
         }
     }
 
