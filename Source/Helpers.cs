@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using RimWorld.Planet;
@@ -49,23 +50,44 @@ namespace WorldMakesSense
             return p;
         }
 
-        public static bool RollIncidentProbability(IncidentParms parms, float p_hostile, float p_neutral, float p_ally)
+        public static float? GetIncidentProbability(IncidentParms parms, float p_hostile, float p_neutral, float p_ally, bool use_distance=true, bool use_losses=true)
         {
-            if (parms == null) return true;
-            if (parms.quest != null) return true;
+            if (parms == null) return null;
+            if (parms.quest != null) return null;
             
             var points = parms.points;
             var target = parms.target;
 
-            if (points == 0) return true;
+            if (points == 0) return null;
 
             var faction = parms.faction;
-            if (faction.IsPlayer) return true;
-            var losses = WorldLosses.Current.GetLosses(faction);
+            if (faction == null)
+            {
+                Log.Message("Faction is null");
+                return null;
+            }
+            if (faction.IsPlayer) return null;
 
-            var distanceToFaction = Helpers.GetFactionDistanceToTile(faction, target.Tile);
-            if (distanceToFaction == null) return true;
-            if (distanceToFaction <= 0) return true;
+            List<float> components = new List<float>();
+            if (use_distance)
+            {
+                var distanceToFaction = Helpers.GetFactionDistanceToTile(faction, target.Tile);
+                if (distanceToFaction == null) return null;
+                if (distanceToFaction <= 0) return null;
+                var distProb = GetDistanceProbability(distanceToFaction.Value);
+                components.Add(distProb);
+            }
+            
+            if (use_losses)
+            {
+                var losses = WorldLosses.Current.GetLosses(faction);
+                var lossProb = CalculateLossProbability(points, losses);
+                components.Add(lossProb);
+            }
+
+            float probability = 1;
+            foreach (float v in components) probability *= v;
+            probability = (float)Math.Sqrt(probability);
 
             float multiplier = 1f;
             if (WorldMakesSenseMod.Settings != null)
@@ -73,13 +95,11 @@ namespace WorldMakesSense
                 multiplier = Mathf.Max(0f, WorldMakesSenseMod.Settings.raidRollMultiplier);
             }
 
-            var lossProb = CalculateLossProbability(points, losses);
-            var distProb = GetDistanceProbability(distanceToFaction.Value);
-            var probability = Math.Sqrt(lossProb * distProb);
-            
+            probability *= multiplier;
+
             // Apply enemy factions factor
             int enemies = 0;
-            try { enemies = Find.FactionManager?.AllFactionsListForReading?.Count(f => f != null && !f.IsPlayer && f.HostileTo(Faction.OfPlayer)) ?? 0; } catch { enemies = 0; }
+            try { enemies = Find.FactionManager?.AllFactionsListForReading?.Count(f => f != null && !f.IsPlayer && !f.Hidden && f.HostileTo(Faction.OfPlayer)) ?? 0; } catch { enemies = 0; }
             int neutrals = 0;
             try {
                 neutrals = Find.FactionManager?.AllFactionsListForReading?.Count(
@@ -102,7 +122,9 @@ namespace WorldMakesSense
             float perRelation = WorldMakesSenseMod.Settings?.probabilityPerRelation ?? 0f;
             float relationFactor = 1f + perRelation * (enemies * p_hostile + neutrals * p_neutral + allies * p_ally);
 
+            Log.Message($"Probability: {probability};");
             probability *= relationFactor;
+            Log.Message($"Probability with relation factor: {probability}; enemies: {enemies}, neutrals: {neutrals}, allies: {allies}");
             
             // float perEnemy = WorldMakesSenseMod.Settings?.enemyRaidPerEnemyFactor ?? 0f;
             // float enemyFactor = 1f + enemies * perEnemy;
@@ -112,16 +134,8 @@ namespace WorldMakesSense
             if (probability < 0f) probability = 0f;
             if (probability > 1f) probability = 1f;
 
-            var roll = Rand.Value * multiplier;
+            return probability;
 
-            bool willHappen = roll < probability;
-
-            if (WorldMakesSenseMod.Settings?.debugLogging == true)
-            {
-                Log.Message($"[WorldMakesSense] points={points:0}; p={(float)probability:0.000} (losses={lossProb:0.000}, distance={distProb:0.000}, relations={relationFactor:0.000}, roll={roll:0.000}; {(willHappen ? "Raid will happen." : "Raid cancelled.")}");
-            }
-
-            return willHappen;
         }
 
     }

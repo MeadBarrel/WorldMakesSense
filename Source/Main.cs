@@ -86,12 +86,21 @@ namespace WorldMakesSense
         }
     }
 
-    [HarmonyPatch(typeof(IncidentWorker_Raid), "TryExecuteWorker")]
-    public static class Patch_Raid_TryExecuteWorker_Block
+    [HarmonyPatch(typeof(IncidentWorker_RaidEnemy), "TryExecuteWorker")]
+    public static class Patch_RaidEnemy_TryExecuteWorker_Block
     {
-        public static bool Prefix(IncidentParms parms, ref bool __result)
+        public static bool Prefix(
+            IncidentWorker_RaidEnemy __instance,
+            IncidentParms parms, ref bool __result)
         {
-            if (Helpers.RollIncidentProbability(parms, 1, 0, 0)) return true;
+            object[] args = { parms };
+            var mi = AccessTools.Method(typeof(IncidentWorker_RaidEnemy), "ResolveRaidPoints");
+            mi.Invoke(__instance, args);
+            mi = AccessTools.Method(typeof(IncidentWorker_RaidEnemy), "TryResolveRaidFaction");
+            mi.Invoke(__instance, args);
+            var p = Helpers.GetIncidentProbability(parms, 1, 0, 0);
+            if (p == null) return true;
+            if (Rand.Value < p) return true;
             __result = true;
             return false;
         }
@@ -100,9 +109,18 @@ namespace WorldMakesSense
     [HarmonyPatch(typeof(IncidentWorker_TraderCaravanArrival), "TryExecuteWorker")]
     public static class Patch_TraderCaravanArrival_Block
     {
-        public static bool Prefix(IncidentParms parms, ref bool __result)
+        public static bool Prefix(
+            IncidentWorker_TraderCaravanArrival __instance,
+            IncidentParms parms, ref bool __result
+            )
         {
-            if (Helpers.RollIncidentProbability(parms, 0, 1, 1)) return true;
+            object[] args = { parms };
+            var mi = AccessTools.Method(typeof(IncidentWorker_TraderCaravanArrival), "TryResolveParms");
+            mi.Invoke(__instance, args);
+            
+            var p = Helpers.GetIncidentProbability(parms, 0, 1, 1, use_losses: false);
+            if (p == null) return true;
+            if (Rand.Value < p) return true;
             __result = true;
             return false;
         }
@@ -113,7 +131,10 @@ namespace WorldMakesSense
     {
         public static bool Prefix(IncidentParms parms, ref bool __result)
         {
-            if (Helpers.RollIncidentProbability(parms, 1, 0, 0)) return true;
+            PawnGroupMakerUtility.TryGetRandomFactionForCombatPawnGroup(parms.points, out parms.faction);
+            var p = Helpers.GetIncidentProbability(parms, 1, 0, 0);
+            if (p == null) return true;
+            if (Rand.Value < p) return true;
             __result = true;
             return false;
         }
@@ -122,12 +143,27 @@ namespace WorldMakesSense
     [HarmonyPatch(typeof(IncidentWorker_CaravanMeeting), "TryExecuteWorker")]
     public static class Patch_CaravanMeeting_Block
     {
-        public static bool Prefix(IncidentParms parms, ref bool __result)
+        public static bool Prefix(
+            IncidentParms parms, ref bool __result)
         {
-            if (Helpers.RollIncidentProbability(parms, 0, 1, 1)) return true;
+            
+            Find.FactionManager.AllFactionsListForReading.Where((Faction x) => !x.IsPlayer && !x.HostileTo(Faction.OfPlayer) && !x.Hidden && x.def.humanlikeFaction && !x.temporary && x.def.caravanTraderKinds.Any() && !x.def.pawnGroupMakers.NullOrEmpty()).TryRandomElement(out var faction);
+            parms.faction = faction;
+
+            var p = Helpers.GetIncidentProbability(parms, 0, 1, 1, use_losses: false);
+            if (p == null) return true;
+            float roll = Rand.Value;
+            Log.Message($"Roll: {roll};");
+            if (roll < p)
+            {
+                Log.Message($"Meeting will happen: {roll};");
+                return true;
+            }
+            Log.Message($"Meeting cancelled: {roll};");
             __result = true;
             return false;
         }
     }
+
 }
 
