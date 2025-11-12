@@ -6,6 +6,8 @@
 	<supportedVersions>
 		<li>1.6</li>
 	</supportedVersions>
+	<modVersion>0.1</modVersion>
+	
 
 	<modDependencies>
 		<li>
@@ -20,5 +22,5 @@
 		<!-- <li>username.modname</li> -->
 	</incompatibleWith>
 
-    <description>WorldMakesSense</description>
+    <description>WorldMakesSense is a RimWorld balance mod that makes raids and caravans behave like the factions behind them actually care about losses, distance, and tech parity. NPC factions record every pawn they lose, raid strength is scaled to reflect that attrition, and traders think twice before crossing half the planet for a poor colony. Safe to add to existing saves, as well as to remove mid-playthrough.</description>
 </ModMetaData>
