@@ -26,20 +26,6 @@ namespace WorldMakesSense
 
 
     [DefOf]
-    public class WorldMakesSenseDefOf
-    {
-        public static LetterDef success_letter;
-    }
-
-    public class MyMapComponent : MapComponent
-    {
-        public MyMapComponent(Map map) : base(map) { }
-        public override void FinalizeInit()
-        {
-            Messages.Message("Success", null, MessageTypeDefOf.PositiveEvent);
-            Find.LetterStack.ReceiveLetter(new TaggedString("Success"), new TaggedString("Success message"), WorldMakesSenseDefOf.success_letter, "", 0);
-        }
-    }
 
     [StaticConstructorOnStartup]
     public static class Start
@@ -47,21 +33,9 @@ namespace WorldMakesSense
         static Start()
         {
             Log.Message("WorldMakesSense loaded successfully!");
-            Harmony harmony = new Harmony("username.worldmakessense");
+            Harmony harmony = new Harmony("tashka.worldmakessense");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             // Ensure WorldLosses component exists so deterioration starts ticking
-        }
-    }
-
-    // *Uncomment for Harmony*
-    // [HarmonyPatch(typeof(LetterStack), "ReceiveLetter")]
-    // [HarmonyPatch(new Type[] {typeof(TaggedString), typeof(TaggedString), typeof(LetterDef), typeof(string), typeof(int), typeof(bool)})]
-    public static class LetterTextChange
-    {
-        public static bool Prefix(ref TaggedString text)
-        {
-            text += new TaggedString(" with harmony");
-            return true;
         }
     }
 
