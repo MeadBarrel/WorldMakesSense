@@ -10,6 +10,48 @@ namespace WorldMakesSense
 {
     public static class Helpers
     {
+        public static int CountHostileFactions(Faction faction, bool count_hidden = false)
+        {
+            return Find.FactionManager?.AllFactionsListForReading?.Count(
+                f => f != null
+                && f != faction
+                && (!f.Hidden || count_hidden)
+                && f.HostileTo(faction)
+            ) ?? 0;
+        }
+        public static int CountAlliedFactions(Faction faction, bool count_hidden = false)
+        {
+            return Find.FactionManager?.AllFactionsListForReading?.Count(
+                f => f != null
+                && f != faction
+                && (!f.Hidden || count_hidden)
+                && f.GoodwillWith(faction) >= 75
+            ) ?? 0;
+        }
+        public static float GetDistanceProbability(Faction faction, PlanetTile tile, out float? distance)
+        {
+            if (faction == null || tile == null)
+            {
+                distance = null;
+                return 1f;
+            }
+            distance = GetFactionDistanceToTile(faction, tile);
+            if (distance == null) return 1f;
+            var distanceFactor = GetDistanceProbabilityRaw(distance.Value);
+            var minPDistance = WorldMakesSenseMod.Settings.raidMinProbabilityFromDistance;
+            return minPDistance + (1 - minPDistance) * distanceFactor;
+        }
+        
+        public static float GetTechLevelProbability(Faction incidentFaction, Faction targetFaction)
+        {
+            var fTechLevel = incidentFaction?.def?.techLevel ?? TechLevel.Undefined;
+            if (fTechLevel == TechLevel.Undefined) return 1f;
+            var tTechLevel = targetFaction?.def?.techLevel ?? TechLevel.Undefined;
+            if (tTechLevel == TechLevel.Undefined) return 1f;
+            return 1f / (1f + Math.Max(0, (int)fTechLevel - (int)tTechLevel));
+                        
+        }
+
         public static float? GetFactionDistanceToTile(Faction faction, PlanetTile tile)
         {
             var settlements = Find.WorldObjects.Settlements
@@ -24,7 +66,7 @@ namespace WorldMakesSense
             return result;
         }
 
-        public static float GetDistanceProbability(float distance)
+        public static float GetDistanceProbabilityRaw(float distance)
         {
             var settings = WorldMakesSenseMod.Settings;
             var distanceClose = settings.distanceClose;
@@ -50,92 +92,29 @@ namespace WorldMakesSense
             return p;
         }
 
-        public static float? GetIncidentProbability(IncidentParms parms, float p_hostile, float p_neutral, float p_ally, bool use_distance=true, bool use_losses=true)
+        
+        public static float GetPerEnemyProbability(Faction faction, float p, out int enemies)
         {
-            if (parms == null) return null;
-            if (parms.quest != null) return null;
-            
-            var points = parms.points;
-            var target = parms.target;
-
-            if (points == 0) return null;
-
-            var faction = parms.faction;
             if (faction == null)
             {
-                Log.Message("Faction is null");
-                return null;
+                enemies = 0;
+                return 1f;
             }
-            if (faction.IsPlayer) return null;
+            enemies = Helpers.CountHostileFactions(faction) - WorldMakesSenseMod.Settings.defaultNumEnemies;
+            float perEnemy = WorldMakesSenseMod.Settings.perEnemyMultiplier;
+            return 1.0f - (1.0f - p) * (float)Math.Pow(1.0f - perEnemy, enemies);
+        }
 
-            List<float> components = new List<float>();
-            if (use_distance)
+        public static float GetPerAllyProbability(Faction faction, float p, out int allies)
+        {
+            if (faction == null)
             {
-                var distanceToFaction = Helpers.GetFactionDistanceToTile(faction, target.Tile);
-                if (distanceToFaction == null) return null;
-                if (distanceToFaction <= 0) return null;
-                var distProb = GetDistanceProbability(distanceToFaction.Value);
-                components.Add(distProb);
+                allies = 0;
+                return 1f;
             }
-            
-            if (use_losses)
-            {
-                var losses = WorldLosses.Current.GetLosses(faction);
-                var lossProb = CalculateLossProbability(points, losses);
-                components.Add(lossProb);
-            }
-
-            float probability = 1;
-            foreach (float v in components) probability *= v;
-            probability = (float)Math.Sqrt(probability);
-
-            float multiplier = 1f;
-            if (WorldMakesSenseMod.Settings != null)
-            {
-                multiplier = Mathf.Max(0f, WorldMakesSenseMod.Settings.raidRollMultiplier);
-            }
-
-            probability *= multiplier;
-
-            // Apply enemy factions factor
-            int enemies = 0;
-            try { enemies = Find.FactionManager?.AllFactionsListForReading?.Count(f => f != null && !f.IsPlayer && !f.Hidden && f.HostileTo(Faction.OfPlayer)) ?? 0; } catch { enemies = 0; }
-            int neutrals = 0;
-            try {
-                neutrals = Find.FactionManager?.AllFactionsListForReading?.Count(
-                    f => f != null
-                    && !f.IsPlayer
-                    && f.AllyOrNeutralTo(Faction.OfPlayer)
-                ) ?? 0;
-            }   catch { neutrals = 0;  }
-            int allies = 0;
-            try
-            {
-                allies = Find.FactionManager?.AllFactionsListForReading?.Count(
-                    f => f != null
-                    && !f.IsPlayer
-                    && f.GoodwillWith(Faction.OfPlayer) >= 75
-                ) ?? 0;
-            }
-            catch { allies = 0; }
-
-            float perRelation = WorldMakesSenseMod.Settings?.probabilityPerRelation ?? 0f;
-            float relationFactor = 1f + perRelation * (enemies * p_hostile + neutrals * p_neutral + allies * p_ally);
-
-            Log.Message($"Probability: {probability};");
-            probability *= relationFactor;
-            Log.Message($"Probability with relation factor: {probability}; enemies: {enemies}, neutrals: {neutrals}, allies: {allies}");
-            
-            // float perEnemy = WorldMakesSenseMod.Settings?.enemyRaidPerEnemyFactor ?? 0f;
-            // float enemyFactor = 1f + enemies * perEnemy;
-            //if (enemyFactor < 0f) enemyFactor = 0f;
-            //probability *= enemyFactor;
-            
-            if (probability < 0f) probability = 0f;
-            if (probability > 1f) probability = 1f;
-
-            return probability;
-
+            allies = Helpers.CountAlliedFactions(faction);
+            float perAlly = WorldMakesSenseMod.Settings.perAllyMultiplier;
+            return 1.0f - (1.0f - p) * (float)Math.Pow(1.0f - perAlly, allies);
         }
 
     }

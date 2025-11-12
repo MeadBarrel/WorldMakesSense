@@ -84,8 +84,7 @@ namespace WorldMakesSense
         public void DeteriorateOnce()
         {
             var s = WorldMakesSenseMod.Settings;
-            float percent = s != null ? Math.Max(0f, s.lossDeteriorationPercent) : 10f;
-            float fraction = Math.Min(1f, percent / 100f);
+            float fraction = s.lossDeteriorationPercent;
 
             if (losses == null || losses.Count == 0) return;
             var keys = new List<Faction>(losses.Keys);
@@ -93,7 +92,7 @@ namespace WorldMakesSense
             {
                 if (f == null || f.IsPlayer) { losses.Remove(f); continue; }
                 float v = losses[f];
-                float nv = v * (1f - fraction);
+                float nv = v * fraction;
                 if (nv <= 0.01f)
                 {
                     losses.Remove(f);
@@ -105,7 +104,7 @@ namespace WorldMakesSense
             }
             if (WorldMakesSenseMod.Settings?.debugLogging == true)
             {
-                Log.Message($"[WorldMakesSense] Deteriorated faction losses by {percent:0.#}%");
+                Log.Message($"[WorldMakesSense] Deteriorated faction losses by {fraction:0.#}%");
             }
         }
 
@@ -118,6 +117,7 @@ namespace WorldMakesSense
 
         public static float GetDeathLoss(Pawn pawn)
         {
+            var map = pawn.Map;
             if (pawn == null) return 0f;
             var f = pawn.Faction;
             if (f == null || f.IsPlayer) return 0f;
@@ -126,16 +126,21 @@ namespace WorldMakesSense
             var tracker = pawn.skills;
             if (tracker == null || tracker.skills == null) return 0f;
 
-            int sum = 0;
+            int skillSum = 0;
             for (int i = 0; i < tracker.skills.Count; i++)
             {
                 var sr = tracker.skills[i];
                 if (sr != null)
                 {
-                    sum += sr.Level;
+                    skillSum += sr.Level;
                 }
             }
-            return sum;
+            var result = skillSum;
+            if (map != null && map.IsPlayerHome)
+            {
+                result /= 2;
+            }
+            return result;
         }
 
         public float GetLosses(Faction f)
