@@ -45,6 +45,15 @@ namespace WorldMakesSense
                 && f.GoodwillWith(faction) >= 75
             ) ?? 0;
         }
+        public static float GetTileDistanceProbability(PlanetTile fTile, PlanetTile tile, out float? distance)
+        {
+            var grid = Find.WorldGrid;
+            distance = grid.ApproxDistanceInTiles(fTile, tile);
+            if (distance == null) return 1f;
+            var distanceFactor = GetDistanceProbabilityRaw(distance.Value);
+            var minPDistance = WorldMakesSenseMod.Settings.raidMinProbabilityFromDistance;
+            return minPDistance + (1 - minPDistance) * distanceFactor;
+        }
         public static float GetDistanceProbability(Faction faction, PlanetTile tile, out float? distance)
         {
             if (faction == null || tile == null)

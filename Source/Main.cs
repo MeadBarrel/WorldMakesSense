@@ -37,6 +37,25 @@ namespace WorldMakesSense
         }
     }
 
+    
+    [HarmonyPatch(typeof(Settlement), "GetInspectString")]
+    public class Settlement_GetInspectString
+    {
+        public static void Postfix(Settlement __instance, ref string __result)
+        {
+            var faction = __instance.Faction;
+            var playerSettlements = Find.WorldObjects.Settlements.Where(s => s.Map?.IsPlayerHome ?? false);
+            foreach (var s in playerSettlements)
+            {
+                var name = s.Name;
+                var p = Helpers.GetTileDistanceProbability(__instance.Tile, s.Tile, out var distance);
+                var pFaction = Helpers.GetDistanceProbability(faction, s.Tile, out var fDistance);
+                string text = $"distance to {name}: {distance:0.##}/{fDistance:0.##} (Attack probability: {p:0.00}/{pFaction:0.00})";
+                __result += $"\n{text}";
+            }
+        }
+    }    
+    
     [HarmonyPatch(typeof(FactionManager), "Notify_PawnKilled")]
     public static class Patch_FactionManager_Notify_PawnKilled
     {
