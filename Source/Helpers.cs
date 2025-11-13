@@ -10,6 +10,23 @@ namespace WorldMakesSense
 {
     public static class Helpers
     {
+        public static void OnPawnKilled(Pawn pawn)
+        {
+            var faction = pawn?.Faction;
+            if (faction == null || faction.IsPlayer) return;
+
+            float amount = WorldLosses.GetDeathLoss(pawn);
+            if (amount > 0f)
+            {
+                WorldLosses.Current.AddLoss(faction, amount);
+                if (WorldMakesSenseMod.Settings?.debugLogging == true)
+                {
+                    Log.Message($"[WorldMakesSense] Added {amount:0} losses to faction {faction?.Name ?? "<null>"}");
+                }
+            }
+            
+        }
+
         public static int CountHostileFactions(Faction faction, bool count_hidden = false)
         {
             return Find.FactionManager?.AllFactionsListForReading?.Count(

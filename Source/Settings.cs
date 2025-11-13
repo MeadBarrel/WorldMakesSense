@@ -25,6 +25,7 @@ namespace WorldMakesSense
         
         public bool debugLogging = false;
         public float lossMultiplier = 0.12f;
+        public float onPlayerMapLossMultiplier = 0.25f;
 
         public float lossDeteriorationPercent = 0.954841614f;
         public float lossDeteriorationDays = 1f;
@@ -42,12 +43,14 @@ namespace WorldMakesSense
             Scribe_Values.Look(ref defaultNumEnemies, "defaultNumEnemies", 5);
             Scribe_Values.Look(ref perEnemyMultiplier, "perEnemyMultiplier", 0.1f);
             Scribe_Values.Look(ref perAllyMultiplier, "perAllyMultiplier", 0.2f);
+
+            Scribe_Values.Look(ref lossMultiplier, "lossMultiplier", 1f);
+            Scribe_Values.Look(ref onPlayerMapLossMultiplier, "onPlayerMapLossMultipler", 0.25f);
             
 
             Scribe_Values.Look(ref distanceClose, "distanceClose", 5);
             Scribe_Values.Look(ref distanceFar, "distanceFar", 50);
             Scribe_Values.Look(ref debugLogging, "debugLogging", false);
-            Scribe_Values.Look(ref lossMultiplier, "lossMultiplier", 1f);
             Scribe_Values.Look(ref lossDeteriorationPercent, "lossDeteriorationPercent", 10f);
             Scribe_Values.Look(ref probabilityPerRelation, "probabilityPerRelation", 0.10f);
         }
@@ -77,6 +80,7 @@ namespace WorldMakesSense
             perEnemyMultiplierWidget(list);
             defaultNumEnemiesWidget(list);
             lossMultiplierWidget(list);
+            onPlayerMapLossMultiplerWidget(list);
             perAllyMultiplierWidget(list);
 
             // Raids  ============================
@@ -114,8 +118,25 @@ namespace WorldMakesSense
                 rightAlignedLabel: "1x",
                 roundTo: 0.01f
             );
+        }
 
-            
+        protected void onPlayerMapLossMultiplerWidget(Listing_Standard list)
+        {
+            list.Gap(12f);
+            var lossLabel = $"Loss multiplier on player map: {Settings.onPlayerMapLossMultiplier:0.00}x";
+            var lossRect = list.GetRect(24f);
+            Settings.onPlayerMapLossMultiplier = Widgets.HorizontalSlider(
+                lossRect,
+                Settings.onPlayerMapLossMultiplier,
+                0.01f,
+                1.0f,
+                middleAlignment: false,
+                label: lossLabel,
+                leftAlignedLabel: "0.01x",
+                rightAlignedLabel: "1x",
+                roundTo: 0.01f
+            );
+
         }
 
         protected void raidPointsAdjustmentRangeWidget(Listing_Standard list)
@@ -211,7 +232,7 @@ namespace WorldMakesSense
                 0.01f,
                 0.25f,
                 middleAlignment: false,
-                label: $"Per enemy multiplier: {Settings.perAllyMultiplier:0.00}",
+                label: $"Per ally multiplier: {Settings.perAllyMultiplier:0.00}",
                 leftAlignedLabel: "0.01x",
                 rightAlignedLabel: "0.25x",
                 roundTo: 0.01f

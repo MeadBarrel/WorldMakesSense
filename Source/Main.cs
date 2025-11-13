@@ -25,8 +25,6 @@ namespace WorldMakesSense
 {
 
 
-    [DefOf]
-
     [StaticConstructorOnStartup]
     public static class Start
     {
@@ -39,27 +37,12 @@ namespace WorldMakesSense
         }
     }
 
-    [HarmonyPatch(typeof(Pawn_HealthTracker), "SetDead")]
-    public static class Patch_SetDead_IncrementFactionLosses
+    [HarmonyPatch(typeof(FactionManager), "Notify_PawnKilled")]
+    public static class Patch_FactionManager_Notify_PawnKilled
     {
-        public static void Postfix(Pawn_HealthTracker __instance, Pawn ___pawn)
+        public static void Postfix(Pawn pawn)
         {
-            var pawn = ___pawn;
-            var map = pawn.Map;
-            var faction = ___pawn?.Faction;
-            if (faction == null || faction.IsPlayer) return;
-
-            float amount = WorldLosses.GetDeathLoss(pawn);
-            var lm = WorldMakesSenseMod.Settings != null ? Mathf.Max(0f, WorldMakesSenseMod.Settings.lossMultiplier) : 1f;
-            amount *= lm;
-            if (amount > 0f)
-            {
-                WorldLosses.Current.AddLoss(faction, amount);
-                if (WorldMakesSenseMod.Settings?.debugLogging == true)
-                {
-                    Log.Message($"[WorldMakesSense] Added {amount:0} losses (x{lm:0.00}) to faction {faction?.Name ?? "<null>"}");
-                }
-            }
+            Helpers.OnPawnKilled(pawn);
         }
     }
 

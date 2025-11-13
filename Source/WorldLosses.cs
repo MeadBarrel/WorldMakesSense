@@ -135,11 +135,12 @@ namespace WorldMakesSense
                     skillSum += sr.Level;
                 }
             }
-            var result = skillSum;
+            float result = skillSum;
             if (map != null && map.IsPlayerHome)
             {
-                result /= 2;
+                result *= Math.Max(0f, WorldMakesSenseMod.Settings?.onPlayerMapLossMultiplier ?? 0.25f);
             }
+            result *= Math.Max(0f, WorldMakesSenseMod.Settings?.lossMultiplier ?? 1f);
             return result;
         }
 
