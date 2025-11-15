@@ -24,6 +24,7 @@ namespace WorldMakesSense
         public int distanceFar = 50;
         
         public bool debugLogging = false;
+        public bool notifyIncidentLetters = false;
         public float lossMultiplier = 0.12f;
         public float onPlayerMapLossMultiplier = 0.25f;
 
@@ -53,6 +54,7 @@ namespace WorldMakesSense
             Scribe_Values.Look(ref debugLogging, "debugLogging", false);
             Scribe_Values.Look(ref lossDeteriorationPercent, "lossDeteriorationPercent", 10f);
             Scribe_Values.Look(ref probabilityPerRelation, "probabilityPerRelation", 0.10f);
+            Scribe_Values.Look(ref notifyIncidentLetters, "notifyIncidentLetters", false);
         }
     }
 
@@ -98,6 +100,7 @@ namespace WorldMakesSense
             // Verbose logging toggle
             list.Gap(12f);
             Widgets.CheckboxLabeled(list.GetRect(24f), "Verbose debug logging", ref Settings.debugLogging);
+            Widgets.CheckboxLabeled(list.GetRect(24f), "Send raid/caravan outcome letters", ref Settings.notifyIncidentLetters);
 
             list.End();
         }

@@ -143,6 +143,42 @@ namespace WorldMakesSense
             return 1.0f - (1.0f - p) * (float)Math.Pow(1.0f - perAlly, allies);
         }
 
+        public static void SendIncidentLetter(string label, string text, IncidentParms parms, Faction relatedFaction = null, LetterDef letterDef = null)
+        {
+            if (WorldMakesSenseMod.Settings?.notifyIncidentLetters != true)
+            {
+                return;
+            }
+
+            var lookTargets = ResolveLookTargets(parms?.target);
+            var def = letterDef ?? LetterDefOf.NeutralEvent;
+            Find.LetterStack.ReceiveLetter(label, text, def, lookTargets, relatedFaction);
+        }
+
+        private static LookTargets ResolveLookTargets(IIncidentTarget target)
+        {
+            if (target == null)
+            {
+                return LookTargets.Invalid;
+            }
+
+            if (target is Map map)
+            {
+                return new LookTargets(map.Center, map);
+            }
+
+            if (target is WorldObject worldObject)
+            {
+                return new LookTargets(worldObject);
+            }
+
+            if (target is Thing thing)
+            {
+                return new LookTargets(thing);
+            }
+
+            return LookTargets.Invalid;
+        }
+
     }
 }
-
