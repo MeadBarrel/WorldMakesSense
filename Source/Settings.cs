@@ -9,17 +9,11 @@ namespace WorldMakesSense
 {
     public class WorldMakesSenseSettings : ModSettings
     {
-        public float raidLossesMultiplier = 0.2f;
         public float raidPointsMinAdjustment = 0.7f;
         public float raidPointsMaxAdjustment = 1.25f;
         public float raidMinProbabilityFromLosses = 0.7f;
         public float raidMinProbabilityFromDistance = 0.0f;
 
-        public int defaultNumEnemies = 5;
-        public float perEnemyMultiplier = 0.1f;
-
-        public float perAllyMultiplier = 0.2f;
-        
         public int distanceClose = 5;
         public int distanceFar = 50;
         
@@ -32,22 +26,23 @@ namespace WorldMakesSense
         public float lossDeteriorationDays = 1f;
         // Per-enemy raid probability factor. Negative reduces, positive increases.
         public float probabilityPerRelation = 0.10f;
+        
+        public float probabilityMultiplierPerTechLevelBelow = 0.95f;
+        public float probabilityMultiplierPerTechLevelAbove = 1.05f;
+        
+        public float raidPointsMultiplierPerTechLevelBelow = 0.9f;
+        public float raidPointsMultiplierPerTechLevelAbove = 1.1f;
+        public float globalRaidPointsMultiplier = 1f;
 
         public override void ExposeData()
         {
-            Scribe_Values.Look(ref raidLossesMultiplier, "incidentPointsMultiplier",1f);
             Scribe_Values.Look(ref raidPointsMinAdjustment, "raidPointsMinAdjustment", 0.7f);
             Scribe_Values.Look(ref raidPointsMaxAdjustment, "raidPointsMaxAdjustment", 1.25f);
             Scribe_Values.Look(ref raidMinProbabilityFromLosses, "raidMinProbabilityFromLosses", 0.7f);
             Scribe_Values.Look(ref raidMinProbabilityFromDistance, "raidMinProbabilityFromDistance", 0.0f);
 
-            Scribe_Values.Look(ref defaultNumEnemies, "defaultNumEnemies", 5);
-            Scribe_Values.Look(ref perEnemyMultiplier, "perEnemyMultiplier", 0.1f);
-            Scribe_Values.Look(ref perAllyMultiplier, "perAllyMultiplier", 0.2f);
-
             Scribe_Values.Look(ref lossMultiplier, "lossMultiplier", 1f);
             Scribe_Values.Look(ref onPlayerMapLossMultiplier, "onPlayerMapLossMultipler", 0.25f);
-            
 
             Scribe_Values.Look(ref distanceClose, "distanceClose", 5);
             Scribe_Values.Look(ref distanceFar, "distanceFar", 50);
@@ -55,6 +50,13 @@ namespace WorldMakesSense
             Scribe_Values.Look(ref lossDeteriorationPercent, "lossDeteriorationPercent", 10f);
             Scribe_Values.Look(ref probabilityPerRelation, "probabilityPerRelation", 0.10f);
             Scribe_Values.Look(ref notifyIncidentLetters, "notifyIncidentLetters", false);
+            
+            Scribe_Values.Look(ref probabilityMultiplierPerTechLevelBelow, "probabilityMultiplierPerTechLevelBelow", 0.95f);
+            Scribe_Values.Look(ref probabilityMultiplierPerTechLevelAbove, "probabilityMultiplierPerTechLevelAbove", 1.05f);
+            
+            Scribe_Values.Look(ref raidPointsMultiplierPerTechLevelBelow, "raidPointsMultiplierPerTechLevelBelow", 0.9f);
+            Scribe_Values.Look(ref raidPointsMultiplierPerTechLevelAbove, "raidPointsMultiplierPerTechLevelAbove", 1.1f);
+            Scribe_Values.Look(ref globalRaidPointsMultiplier, "globalRaidPointsMultiplier", 0f);
         }
     }
 
@@ -79,19 +81,20 @@ namespace WorldMakesSense
             list.GapLine();
 
             distanceRangeWidget(list);
-            perEnemyMultiplierWidget(list);
-            defaultNumEnemiesWidget(list);
             lossMultiplierWidget(list);
             onPlayerMapLossMultiplerWidget(list);
-            perAllyMultiplierWidget(list);
 
             // Raids  ============================
             list.GapLine();
             list.Gap(12f);
             Widgets.Label(list.GetRect(24f), "Raids");
-            raidLossesMultiplierWidget(list);
             raidPointsAdjustmentRangeWidget(list);
             raidMinProbabilityFromLossesWidget(list);
+            probabilityMultiplierPerTechLevelBelowWidget(list);
+            probabilityMultiplierPerTechLevelAboveWidget(list);
+            raidPointsMultiplierPerTechLevelBelowWidget(list);
+            raidPointsMultiplierPerTechLevelAboveWidget(list);
+            globalRaidPointsMultiplierWidget(list);
 
             list.GapLine();
             lossesHalfLifeWidget(list);
@@ -99,8 +102,8 @@ namespace WorldMakesSense
 
             // Verbose logging toggle
             list.Gap(12f);
-            Widgets.CheckboxLabeled(list.GetRect(24f), "Verbose debug logging", ref Settings.debugLogging);
             Widgets.CheckboxLabeled(list.GetRect(24f), "Send raid/caravan outcome letters", ref Settings.notifyIncidentLetters);
+            Widgets.CheckboxLabeled(list.GetRect(24f), "Verbose debug logging", ref Settings.debugLogging);
 
             list.End();
         }
@@ -153,22 +156,6 @@ namespace WorldMakesSense
 
         }
 
-        protected void raidLossesMultiplierWidget(Listing_Standard list)
-        {
-            list.Gap(12f);
-            Settings.raidLossesMultiplier = Widgets.HorizontalSlider(
-                list.GetRect(24f),
-                Settings.raidLossesMultiplier,
-                0.1f,
-                1.0f,
-                middleAlignment: false,
-                label: "Raid losses multiplier",
-                leftAlignedLabel: "0.1x",
-                rightAlignedLabel: "1x",
-                roundTo: 0.01f
-            );
-        }
-        
         protected void raidMinProbabilityFromLossesWidget(Listing_Standard list)
         {
             list.Gap(12f);
@@ -196,48 +183,6 @@ namespace WorldMakesSense
                 label: "Minimal raid probability due to distance",
                 leftAlignedLabel: "0",
                 rightAlignedLabel: "1",
-                roundTo: 0.01f
-            );
-        }
-
-        protected void defaultNumEnemiesWidget(Listing_Standard list)
-        {
-            list.Gap(12f);
-            var row = list.GetRect(28f);
-            float labelWidth = 260f;
-            Widgets.Label(new Rect(row.x, row.y, labelWidth, row.height), "Number of enemies a faction is expected to have on average");
-            var fieldRect = new Rect(row.x + labelWidth + 8f, row.y, row.width - labelWidth - 8f, row.height);
-            string buffer = Settings.defaultNumEnemies.ToString();
-            Widgets.TextFieldNumeric(fieldRect, ref Settings.defaultNumEnemies, ref buffer, 0f, 1000f);
-        }
-
-        protected void perEnemyMultiplierWidget(Listing_Standard list)
-        {
-            list.Gap(12f);
-            Settings.perEnemyMultiplier = Widgets.HorizontalSlider(
-                list.GetRect(24f),
-                Settings.perEnemyMultiplier,
-                0.01f,
-                0.25f,
-                middleAlignment: false,
-                label: $"Per enemy multiplier: {Settings.perEnemyMultiplier:0.00}",
-                leftAlignedLabel: "0.01x",
-                rightAlignedLabel: "0.25x",
-                roundTo: 0.01f
-            );
-        }
-        protected void perAllyMultiplierWidget(Listing_Standard list)
-        {
-            list.Gap(12f);
-            Settings.perAllyMultiplier = Widgets.HorizontalSlider(
-                list.GetRect(24f),
-                Settings.perAllyMultiplier,
-                0.01f,
-                0.25f,
-                middleAlignment: false,
-                label: $"Per ally multiplier: {Settings.perAllyMultiplier:0.00}",
-                leftAlignedLabel: "0.01x",
-                rightAlignedLabel: "0.25x",
                 roundTo: 0.01f
             );
         }
@@ -274,6 +219,90 @@ namespace WorldMakesSense
             Widgets.IntRange(rangeRect, 172936215, ref range, 0, 1000);
             Settings.distanceClose = range.min;
             Settings.distanceFar = range.max;
+        }
+
+        protected void probabilityMultiplierPerTechLevelBelowWidget(Listing_Standard list)
+        {
+            list.Gap(12f);
+            Settings.probabilityMultiplierPerTechLevelBelow= Widgets.HorizontalSlider(
+                list.GetRect(24f),
+                Settings.probabilityMultiplierPerTechLevelBelow,
+                0.5f,
+                1f,
+                middleAlignment: false,
+                label: $"Probability adjustment for each tech level below incident faction: {Settings.probabilityMultiplierPerTechLevelBelow:0.00}",
+                leftAlignedLabel: "05x",
+                rightAlignedLabel: "1x (disable)",
+                roundTo: 0.01f
+            );
+            
+        }
+        protected void probabilityMultiplierPerTechLevelAboveWidget(Listing_Standard list)
+        {
+            list.Gap(12f);
+            Settings.probabilityMultiplierPerTechLevelAbove = Widgets.HorizontalSlider(
+                list.GetRect(24f),
+                Settings.probabilityMultiplierPerTechLevelAbove,
+                1f,
+                1.5f,
+                middleAlignment: false,
+                label: $"Probability adjustment for each tech level above incident faction: {Settings.probabilityMultiplierPerTechLevelAbove:0.00}",
+                leftAlignedLabel: "1x (disable)",
+                rightAlignedLabel: "1.5x",
+                roundTo: 0.01f
+            );
+            
+        }
+
+
+        protected void raidPointsMultiplierPerTechLevelBelowWidget(Listing_Standard list)
+        {
+            list.Gap(12f);
+            Settings.raidPointsMultiplierPerTechLevelBelow = Widgets.HorizontalSlider(
+                list.GetRect(24f),
+                Settings.raidPointsMultiplierPerTechLevelBelow,
+                0.5f,
+                1f,
+                middleAlignment: false,
+                label: $"Raid points adjustment for each tech level below incident faction: {Settings.raidPointsMultiplierPerTechLevelBelow:0.00}",
+                leftAlignedLabel: "05x",
+                rightAlignedLabel: "1x (disable)",
+                roundTo: 0.01f
+            );
+            
+        }
+
+        protected void raidPointsMultiplierPerTechLevelAboveWidget(Listing_Standard list)
+        {
+            list.Gap(12f);
+            Settings.raidPointsMultiplierPerTechLevelAbove = Widgets.HorizontalSlider(
+                list.GetRect(24f),
+                Settings.raidPointsMultiplierPerTechLevelAbove,
+                1f,
+                1.5f,
+                middleAlignment: false,
+                label: $"Raid points adjustment for each tech level above incident faction: {Settings.raidPointsMultiplierPerTechLevelAbove:0.00}",
+                leftAlignedLabel: "1x (disable)",
+                rightAlignedLabel: "1.5x",
+                roundTo: 0.01f
+            );
+            
+        }
+
+        protected void globalRaidPointsMultiplierWidget(Listing_Standard list)
+        {
+            list.Gap(12f);
+            Settings.globalRaidPointsMultiplier = Widgets.HorizontalSlider(
+                list.GetRect(24f),
+                Settings.globalRaidPointsMultiplier,
+                0.1f,
+                4.00f,
+                middleAlignment: false,
+                label: $"Global raid points multiplier: {Settings.globalRaidPointsMultiplier:0.00}",
+                leftAlignedLabel: "0.1x",
+                rightAlignedLabel: "4x",
+                roundTo: 0.01f
+            );
         }
     }
 }
