@@ -37,15 +37,15 @@ namespace WorldMakesSense
             float probability = distanceProbabilityMultiplier * techLevelProbabilityMultiplier;
             
             float roll = Rand.Value;
-            bool raidWillProceed = roll < probability;
+            bool willProceed = roll < probability;
 
             if (WorldMakesSenseMod.Settings?.notifyIncidentLetters == true)
             {
                 TechLevel playerTech = Faction.OfPlayer?.def?.techLevel ?? TechLevel.Undefined;
-                string label = raidWillProceed ? "Raid proceeding" : "Raid prevented";
-                var letterDef = raidWillProceed ? LetterDefOf.ThreatBig : LetterDefOf.NeutralEvent;
+                string label = willProceed ? "Friendlies arrive" : "Friendlies cancelled the trip";
+                var letterDef = willProceed ? LetterDefOf.PositiveEvent : LetterDefOf.NeutralEvent;
                 string body = BuildAllyLetterText(
-                        raidWillProceed,
+                        willProceed,
                         faction,
                         roll,
                         probability,
@@ -57,7 +57,7 @@ namespace WorldMakesSense
                 Helpers.SendIncidentLetter(label, body, parms, faction, letterDef);
             }
 
-            if (raidWillProceed)
+            if (willProceed)
                 return true;
 
             return false;
