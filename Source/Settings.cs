@@ -45,18 +45,18 @@ namespace WorldMakesSense
             Scribe_Values.Look(ref onPlayerMapLossMultiplier, "onPlayerMapLossMultipler", 0.25f);
 
             Scribe_Values.Look(ref distanceClose, "distanceClose", 5);
-            Scribe_Values.Look(ref distanceFar, "distanceFar", 50);
+            Scribe_Values.Look(ref distanceFar, "distanceFar", 150);
             Scribe_Values.Look(ref debugLogging, "debugLogging", false);
             Scribe_Values.Look(ref lossDeteriorationPercent, "lossDeteriorationPercent", 10f);
             Scribe_Values.Look(ref probabilityPerRelation, "probabilityPerRelation", 0.10f);
             Scribe_Values.Look(ref notifyIncidentLetters, "notifyIncidentLetters", false);
             
-            Scribe_Values.Look(ref probabilityMultiplierPerTechLevelBelow, "probabilityMultiplierPerTechLevelBelow", 0.95f);
-            Scribe_Values.Look(ref probabilityMultiplierPerTechLevelAbove, "probabilityMultiplierPerTechLevelAbove", 1.05f);
+            Scribe_Values.Look(ref probabilityMultiplierPerTechLevelBelow, "probabilityMultiplierPerTechLevelBelow", 0.75f);
+            Scribe_Values.Look(ref probabilityMultiplierPerTechLevelAbove, "probabilityMultiplierPerTechLevelAbove", 0.75f);
             
-            Scribe_Values.Look(ref raidPointsMultiplierPerTechLevelBelow, "raidPointsMultiplierPerTechLevelBelow", 0.9f);
-            Scribe_Values.Look(ref raidPointsMultiplierPerTechLevelAbove, "raidPointsMultiplierPerTechLevelAbove", 1.1f);
-            Scribe_Values.Look(ref globalRaidPointsMultiplier, "globalRaidPointsMultiplier", 0f);
+            Scribe_Values.Look(ref raidPointsMultiplierPerTechLevelBelow, "raidPointsMultiplierPerTechLevelBelow", 0.8f);
+            Scribe_Values.Look(ref raidPointsMultiplierPerTechLevelAbove, "raidPointsMultiplierPerTechLevelAbove", 1.0f);
+            Scribe_Values.Look(ref globalRaidPointsMultiplier, "globalRaidPointsMultiplier", 1f);
         }
     }
 

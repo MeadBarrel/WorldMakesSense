@@ -11,7 +11,7 @@ namespace WorldMakesSense
 {
     public class AllyProbability
     {
-        public static bool calculate(IncidentParms parms)
+        public static bool calculate(IncidentParms parms, ref bool result)
         {
             var faction = parms.faction;
             var target = Faction.OfPlayer;
@@ -22,19 +22,24 @@ namespace WorldMakesSense
             // Tech level difference
             var techLevelDifference = (int)faction.def.techLevel - (int)target.def.techLevel;
             // Probability for tech level difference
-            var techLevelProbabilityMultiplier = 1f;
+            var techLevelProbability= 1f;
             if (techLevelDifference > 0) {
                 var mp = Math.Clamp(WorldMakesSenseMod.Settings.probabilityMultiplierPerTechLevelBelow, 0.1f, 1f);
-                techLevelProbabilityMultiplier = (float)Math.Pow(mp, Math.Pow(techLevelDifference, 2));
+                techLevelProbability= (float)Math.Pow(mp, Math.Pow(techLevelDifference, 2));
             } else if (techLevelDifference < 0)
             {
                 var mp = Math.Max(WorldMakesSenseMod.Settings.probabilityMultiplierPerTechLevelAbove, 1f);
-                techLevelProbabilityMultiplier = (float)Math.Pow(mp, Math.Pow(-techLevelDifference, 2));
+                techLevelProbability= (float)Math.Pow(mp, Math.Pow(-techLevelDifference, 2));
+            }
+            if (Rand.Value > techLevelProbability)
+            {
+                result = false;
+                return false;
             }
             
             // Calculate probability of success considering distance
             float distanceProbabilityMultiplier = Helpers.GetDistanceProbability(faction, parms.target.Tile, out var distance);
-            float probability = distanceProbabilityMultiplier * techLevelProbabilityMultiplier;
+            float probability = distanceProbabilityMultiplier ;
             
             float roll = Rand.Value;
             bool willProceed = roll < probability;
@@ -49,7 +54,6 @@ namespace WorldMakesSense
                         faction,
                         roll,
                         probability,
-                        techLevelProbabilityMultiplier,
                         distanceProbabilityMultiplier,
                         faction.def.techLevel,
                         Faction.OfPlayer.def.techLevel
@@ -69,7 +73,6 @@ namespace WorldMakesSense
             Faction faction, 
             float roll, 
             float probability, 
-            float techLevelProbabilityMultiplier,
             float distanceProbabilityMultiplier,
             TechLevel allyTech,
             TechLevel hostTech
@@ -87,7 +90,6 @@ namespace WorldMakesSense
 
             sb.AppendLine("Probability breakdown:");
             sb.AppendLine($" - Distance impact: {distanceProbabilityMultiplier}");
-            sb.AppendLine($" - Tech level difference impact: {techLevelProbabilityMultiplier}");
             sb.AppendLine();
             return sb.ToString().TrimEnd();
         }

@@ -11,13 +11,32 @@ namespace WorldMakesSense
 {
     public class RaidProbability
     {
-        public static bool calculate(IncidentParms parms)
+        public static bool calculate(IncidentParms parms, ref bool result)
         {
             var faction = parms.faction;
             var target = Faction.OfPlayer;
             var factionTechLevel = faction?.def?.techLevel;
             if (faction != null && faction.IsPlayer) return true;
             if (parms.quest != null) return true;
+            
+            float techLevelProbability = 1f;
+            if (factionTechLevel != null)
+            {
+                var techLevelDifference = (int)factionTechLevel - (int)target.def.techLevel;
+                if (techLevelDifference > 0) {
+                    var mp = Math.Clamp(WorldMakesSenseMod.Settings.probabilityMultiplierPerTechLevelBelow, 0.1f, 1f);
+                    techLevelProbability= (float)Math.Pow(mp, Math.Pow(techLevelDifference, 2));
+                } else if (techLevelDifference < 0)
+                {
+                    var mp = Math.Max(WorldMakesSenseMod.Settings.probabilityMultiplierPerTechLevelAbove, 1f);
+                    techLevelProbability= (float)Math.Pow(mp, Math.Pow(-techLevelDifference, 2));
+                }
+            }
+            if (Rand.Value > techLevelProbability)
+            {
+                result = false;
+                return false;
+            }
 
             var points = parms.points;
             //var lossFactor = Helpers.CalculateLossProbability(points, losses);
@@ -35,21 +54,12 @@ namespace WorldMakesSense
             var lossesPointsMultiplier = minPointsLosses + lossFactor * (maxPointsLosses - minPointsLosses);
 
             // Tech level difference
-            var techLevelProbabilityMultiplier = 1f;
             var techLevelPointsMultiplier = 0.1f;
             
 
             if (factionTechLevel != null) {
                 var techLevelDifference = (int)factionTechLevel - (int)target.def.techLevel;
                 // Probability for tech level difference
-                if (techLevelDifference > 0) {
-                    var mp = Math.Clamp(WorldMakesSenseMod.Settings.probabilityMultiplierPerTechLevelBelow, 0.1f, 1f);
-                    techLevelProbabilityMultiplier = (float)Math.Pow(mp, Math.Pow(techLevelDifference, 2));
-                } else if (techLevelDifference < 0)
-                {
-                    var mp = Math.Max(WorldMakesSenseMod.Settings.probabilityMultiplierPerTechLevelAbove, 1f);
-                    techLevelProbabilityMultiplier = (float)Math.Pow(mp, Math.Pow(-techLevelDifference, 2));
-                }
                 // Points adjustment for tech level difference
                 if (techLevelDifference > 0)
                 {
@@ -69,7 +79,7 @@ namespace WorldMakesSense
 
             // Calculate probability of success considering distance
             float distanceProbabilityMultiplier = Helpers.GetDistanceProbability(faction, parms.target.Tile, out var distance);
-            float probability = lossesProbabilityMultiplier * distanceProbabilityMultiplier * techLevelProbabilityMultiplier;
+            float probability = lossesProbabilityMultiplier * distanceProbabilityMultiplier;
             
             float roll = Rand.Value;
             bool raidWillProceed = roll < probability;
@@ -89,7 +99,6 @@ namespace WorldMakesSense
                         lossesPointsMultiplier,
                         techLevelPointsMultiplier,
                         lossesProbabilityMultiplier,
-                        techLevelProbabilityMultiplier,
                         distanceProbabilityMultiplier,
                         losses,
                         factionTechLevel,
@@ -115,7 +124,6 @@ namespace WorldMakesSense
             float lossesPointsMultiplier,
             float techLevelPointsMultiplier,
             float lossesProbabilityMultiplier,
-            float techLevelProbabilityMultiplier,
             float distanceProbabilityMultiplier,
             float attackerLosses,
             TechLevel? attackerTech,
@@ -137,8 +145,6 @@ namespace WorldMakesSense
             sb.AppendLine("Probability breakdown:");
             sb.AppendLine($" - Distance impact: {distanceProbabilityMultiplier:0.##}");
             sb.AppendLine($" - Loss impact: {lossesProbabilityMultiplier:0.##}");
-            if (attackerTech != null)
-                sb.AppendLine($" - Tech level difference impact: {techLevelProbabilityMultiplier:0.##}");
             sb.AppendLine();
 
             sb.AppendLine("Raid points:");

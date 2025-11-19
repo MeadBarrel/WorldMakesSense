@@ -37,7 +37,6 @@ namespace WorldMakesSense
             // Ensure WorldLosses component exists so deterioration starts ticking
         }
     }
-
     
     [HarmonyPatch(typeof(Settlement), "GetInspectString")]
     public class Settlement_GetInspectString
@@ -79,10 +78,7 @@ namespace WorldMakesSense
             mi = AccessTools.Method(typeof(IncidentWorker_RaidEnemy), "TryResolveRaidFaction");
             mi.Invoke(__instance, args);
 
-            if (RaidProbability.calculate(parms)) return true;
-
-            __result = true;
-            return false;
+            return RaidProbability.calculate(parms, ref __result);
         }
     }
     
@@ -92,10 +88,7 @@ namespace WorldMakesSense
         public static bool Prefix(ref bool __result, IncidentParms parms)
         {
             parms.faction = Faction.OfMechanoids;
-            bool willProceed = RaidProbability.calculate(parms);
-            if (willProceed) return true;
-            __result = true;
-            return false;
+            return RaidProbability.calculate(parms, ref __result);
         }
     }
 
@@ -104,10 +97,7 @@ namespace WorldMakesSense
     {
         public static bool Prefix(ref bool __result, IncidentParms parms)
         {
-            bool willProceed = RaidProbability.calculate(parms);
-            if (willProceed) return true;
-            __result = true;
-            return false;
+            return RaidProbability.calculate(parms, ref __result);
         }
     }
     
@@ -117,10 +107,7 @@ namespace WorldMakesSense
         public static bool Prefix(ref bool __result, IncidentParms parms)
         {
             parms.faction = Faction.OfInsects;
-            bool willProceed = RaidProbability.calculate(parms);
-            if (willProceed) return true;
-            __result = true;
-            return false;
+            return RaidProbability.calculate(parms, ref __result);
         }
     }
     
@@ -138,12 +125,7 @@ namespace WorldMakesSense
             if (faction.IsPlayer) return true;
             if (parms.quest != null) return true;
             
-            bool willArrive = AllyProbability.calculate(parms);
-
-            if (willArrive) return true;
-
-            __result = true;
-            return false;
+            return AllyProbability.calculate(parms, ref __result);
         }
 
     }
